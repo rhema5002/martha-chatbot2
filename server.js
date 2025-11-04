@@ -2,20 +2,25 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Setup static frontend
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "public")));
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+// ====== API ROUTE ======
 app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
-
-  if (!userMessage) {
-    return res.status(400).json({ error: "Message is required" });
-  }
+  if (!userMessage) return res.status(400).json({ error: "Message is required" });
 
   try {
     const response = await fetch(
@@ -26,11 +31,7 @@ app.post("/api/chat", async (req, res) => {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: userMessage,
-                },
-              ],
+              parts: [{ text: userMessage }],
             },
           ],
         }),
@@ -38,11 +39,7 @@ app.post("/api/chat", async (req, res) => {
     );
 
     const data = await response.json();
-
-    if (data.error) {
-      console.error("Gemini API error:", data.error);
-      return res.status(500).json({ error: data.error.message });
-    }
+    if (data.error) return res.status(500).json({ error: data.error.message });
 
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini 😔";
     res.json({ reply });
@@ -50,6 +47,11 @@ app.post("/api/chat", async (req, res) => {
     console.error("Server error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// ====== HOME ROUTE ======
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
