@@ -54,16 +54,16 @@ async function sendMessage() {
   const typing = showTyping();
 
   try {
-    const res = await fetch("/chat", {   // ✅ endpoint matches server.js
+    const res = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })  // ✅ matches server.js body
+      body: JSON.stringify({ message: text }),
     });
 
     const data = await res.json();
     typing.remove();
 
-    if (data.reply) {   // ✅ matches server response
+    if (data.reply) {
       createMessage(data.reply, "assistant");
     } else {
       createMessage("Sorry — something went wrong.", "assistant");
@@ -83,4 +83,3 @@ input.addEventListener("keypress", (e) => {
     sendMessage();
   }
 });
-
