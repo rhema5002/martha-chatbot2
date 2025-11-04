@@ -1,16 +1,21 @@
 import express from "express";
-import bodyParser from "body-parser";
 import cors from "cors";
 import fetch from "node-fetch";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
-app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-app.post("/chat", async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
+
+  if (!userMessage) {
+    return res.status(400).json({ error: "Message is required" });
+  }
 
   try {
     const response = await fetch(
@@ -19,21 +24,33 @@ app.post("/chat", async (req, res) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: userMessage }] }],
+          contents: [
+            {
+              parts: [
+                {
+                  text: userMessage,
+                },
+              ],
+            },
+          ],
         }),
       }
     );
 
     const data = await response.json();
-    const botReply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I couldn't get a response.";
 
-    res.json({ reply: botReply });
+    if (data.error) {
+      console.error("Gemini API error:", data.error);
+      return res.status(500).json({ error: data.error.message });
+    }
+
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini 😔";
+    res.json({ reply });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ reply: "Error connecting to Gemini API" });
+    console.error("Server error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-app.listen(3000, () => console.log("✅ Martha is running on port 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Martha Gemini Chatbot running on port ${PORT}`));
