@@ -3,38 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Martha — Chatbot</title>
+  <title>Martha Chatbot</title>
   <style>
     body {
-      font-family: "Poppins", sans-serif;
+      font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
-      margin: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
       height: 100vh;
-      overflow: hidden;
+      margin: 0;
+      padding: 0;
     }
     .chat-container {
-      width: 100%;
-      max-width: 600px;
-      background: #1e293b;
-      height: 80vh;
-      border-radius: 15px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 10px;
-      overflow-y: auto;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
     }
     .message {
-      margin: 8px;
+      max-width: 70%;
       padding: 10px 14px;
-      border-radius: 12px;
-      max-width: 80%;
-      line-height: 1.4;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      word-wrap: break-word;
     }
     .user {
       align-self: flex-end;
@@ -42,108 +35,87 @@
     }
     .bot {
       align-self: flex-start;
-      background: #334155;
+      background: #1e293b;
     }
     .input-container {
-      width: 100%;
-      max-width: 600px;
       display: flex;
-      background: #1e293b;
       padding: 10px;
-      border-radius: 12px;
+      background: #1e293b;
     }
     input {
       flex: 1;
       padding: 10px;
       border: none;
-      border-radius: 8px;
       outline: none;
-      font-size: 1em;
       background: #334155;
       color: white;
+      border-radius: 6px;
     }
     button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 10px 16px;
       margin-left: 10px;
-      border-radius: 8px;
+      background: #2563eb;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
       cursor: pointer;
     }
     button:hover {
       background: #1d4ed8;
     }
-    .typing {
-      font-style: italic;
-      opacity: 0.8;
-    }
   </style>
 </head>
 <body>
-  <h2>🤖 Martha — Chatbot</h2>
-  <div class="chat-container" id="chatContainer"></div>
+  <div class="chat-container" id="chat-container">
+    <div class="message bot">👋 Hi, I'm Martha! Ask me anything.</div>
+  </div>
+
   <div class="input-container">
-    <input type="text" id="userInput" placeholder="Say something to Martha..." />
-    <button onclick="sendMessage()">Send</button>
+    <input id="user-input" type="text" placeholder="Type a message..." />
+    <button id="send-btn">Send</button>
   </div>
 
   <script>
-    const chatContainer = document.getElementById("chatContainer");
-    const userInput = document.getElementById("userInput");
-
-    // Load chat history
-    window.onload = () => {
-      const history = JSON.parse(localStorage.getItem("marthaChat") || "[]");
-      history.forEach(msg => addMessage(msg.text, msg.sender));
-    };
+    const sendBtn = document.getElementById("send-btn");
+    const userInput = document.getElementById("user-input");
+    const chatContainer = document.getElementById("chat-container");
 
     async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text) return;
+      const message = userInput.value.trim();
+      if (!message) return;
 
-      addMessage(text, "user");
-      saveMessage(text, "user");
+      // Show user message
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.textContent = message;
+      chatContainer.appendChild(userMsg);
       userInput.value = "";
 
-      const typingMsg = addMessage("Martha is typing...", "bot", true);
+      // Show temporary "typing" text
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      botMsg.textContent = "Martha is typing...";
+      chatContainer.appendChild(botMsg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
 
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text }),
+          body: JSON.stringify({ message }),
         });
+
         const data = await res.json();
-        chatContainer.removeChild(typingMsg);
-
-        const reply = data.reply || "No response 😔";
-        addMessage(reply, "bot");
-        saveMessage(reply, "bot");
-      } catch {
-        chatContainer.removeChild(typingMsg);
-        addMessage("⚠️ Error connecting to server.", "bot");
+        botMsg.textContent = data.reply || "⚠️ No reply from Martha";
+      } catch (err) {
+        botMsg.textContent = "❌ Error connecting to server.";
       }
-    }
 
-    function addMessage(text, sender, isTemp = false) {
-      const msg = document.createElement("div");
-      msg.className = `message ${sender}`;
-      if (isTemp) msg.classList.add("typing");
-      msg.textContent = text;
-      chatContainer.appendChild(msg);
       chatContainer.scrollTop = chatContainer.scrollHeight;
-      return msg;
     }
 
-    function saveMessage(text, sender) {
-      const history = JSON.parse(localStorage.getItem("marthaChat") || "[]");
-      history.push({ text, sender });
-      localStorage.setItem("marthaChat", JSON.stringify(history));
-    }
-
-    // Send message with Enter key
-    userInput.addEventListener("keypress", e => {
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
     });
   </script>
