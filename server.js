@@ -9,17 +9,21 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// Serve frontend
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Serve index.html
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Gemini chat route
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
+  if (!message) return res.status(400).json({ reply: "Message required" });
+
   try {
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
@@ -32,12 +36,13 @@ app.post("/api/chat", async (req, res) => {
         }),
       }
     );
+
     const data = await response.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No reply 😔";
     res.json({ reply });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ reply: "Server error. Try again later." });
+    console.error("Server error:", error);
+    res.status(500).json({ reply: "Internal server error" });
   }
 });
 
