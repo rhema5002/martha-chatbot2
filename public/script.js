@@ -1,85 +1,43 @@
-const chatBox = document.getElementById("chatBox");
-const input = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-
-function scrollToBottom() {
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function createMessage(content, role) {
-  const div = document.createElement("div");
-  div.className = `message ${role}`;
-
-  const avatar = document.createElement("img");
-  avatar.className = "avatar";
-  avatar.src = role === "user" ? "user.png" : "martha.png";
-  avatar.alt = role;
-
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.textContent = content;
-
-  div.appendChild(avatar);
-  div.appendChild(bubble);
-  chatBox.appendChild(div);
-  scrollToBottom();
-}
-
-function showTyping() {
-  const div = document.createElement("div");
-  div.className = "message assistant";
-
-  const avatar = document.createElement("img");
-  avatar.src = "martha.png";
-  avatar.className = "avatar";
-
-  const typing = document.createElement("div");
-  typing.className = "bubble typing";
-  typing.innerHTML = `<span class="dot"></span><span class="dot"></span><span class="dot"></span>`;
-
-  div.appendChild(avatar);
-  div.appendChild(typing);
-  chatBox.appendChild(div);
-  scrollToBottom();
-  return div;
-}
+const sendBtn = document.getElementById("send-btn");
+const userInput = document.getElementById("user-input");
+const chatContainer = document.getElementById("chat-container");
 
 async function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
+  const message = userInput.value.trim();
+  if (!message) return;
 
-  createMessage(text, "user");
-  input.value = "";
+  // Display user message
+  const userMsg = document.createElement("div");
+  userMsg.className = "message user";
+  userMsg.textContent = message;
+  chatContainer.appendChild(userMsg);
+  userInput.value = "";
 
-  const typing = showTyping();
+  // Display "typing..."
+  const botMsg = document.createElement("div");
+  botMsg.className = "message bot";
+  botMsg.textContent = "Martha is typing...";
+  chatContainer.appendChild(botMsg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 
   try {
-    const res = await fetch("/chat", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message }),
     });
 
     const data = await res.json();
-    typing.remove();
-
-    if (data.reply) {
-      createMessage(data.reply, "assistant");
-    } else {
-      createMessage("Sorry — something went wrong.", "assistant");
-    }
+    botMsg.textContent = data.reply || "⚠️ No reply from Martha.";
   } catch (err) {
-    typing.remove();
-    createMessage("Error connecting to server.", "assistant");
-    console.error(err);
+    botMsg.textContent = "❌ Error connecting to server.";
+    console.error("Error:", err);
   }
+
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Event listeners
 sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  }
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
 });
