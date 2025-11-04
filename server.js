@@ -1,50 +1,39 @@
 import express from "express";
-import dotenv from "dotenv";
-import OpenAI from "openai";
-import path from "path";
-import { fileURLToPath } from "url";
-
-dotenv.config();
+import bodyParser from "body-parser";
+import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+app.use(bodyParser.json());
+app.use(cors());
 
-// OpenAI setup
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Get __dirname in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Middleware
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
-
-// Chat endpoint
 app.post("/chat", async (req, res) => {
+  const userMessage = req.body.message;
+
   try {
-    const { message } = req.body;
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + GEMINI_API_KEY,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: userMessage }] }],
+        }),
+      }
+    );
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are Martha, a friendly and helpful AI assistant created by Rhema." },
-        { role: "user", content: message },
-      ],
-    });
+    const data = await response.json();
+    const botReply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I couldn't get a response.";
 
-    const reply = completion.choices[0].message.content;
-    res.json({ reply });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ reply: "⚠️ Server error. Please try again later." });
+    res.json({ reply: botReply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ reply: "Error connecting to Gemini API" });
   }
 });
 
-// Fallback to index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// Start server
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(3000, () => console.log("✅ Martha is running on port 3000"));
