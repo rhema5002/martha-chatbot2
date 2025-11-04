@@ -1,47 +1,50 @@
 import express from "express";
-import fetch from "node-fetch";
 import dotenv from "dotenv";
+import OpenAI from "openai";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 10000;
 
-// Serve static files (HTML, CSS, JS, images)
-app.use(express.static("public"));
+// OpenAI setup
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Get __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Middleware
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 // Chat endpoint
-app.post("/api/chat", async (req, res) => {
-  const userMessage = req.body.message;
-
+app.post("/chat", async (req, res) => {
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are Martha, a friendly and helpful AI assistant created by Rhema." },
-          { role: "user", content: userMessage },
-        ],
-      }),
+    const { message } = req.body;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are Martha, a friendly and helpful AI assistant created by Rhema." },
+        { role: "user", content: message },
+      ],
     });
 
-    const data = await response.json();
-
-    // Get reply safely
-    const reply = data?.choices?.[0]?.message?.content || "Sorry, I couldn’t reply right now.";
-
+    const reply = completion.choices[0].message.content;
     res.json({ reply });
-  } catch (error) {
-    console.error("Error:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ reply: "⚠️ Server error. Please try again later." });
   }
 });
 
-// Render or local port
-const PORT = process.env.PORT || 3000;
+// Fallback to index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Start server
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
