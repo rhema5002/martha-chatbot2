@@ -3,76 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Martha Chatbot (Gemini)</title>
+  <title>Martha — Chatbot</title>
   <style>
     body {
       font-family: "Poppins", sans-serif;
-      background: #101010;
+      background: #0f172a;
       color: white;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       height: 100vh;
-      margin: 0;
+      overflow: hidden;
     }
-    h1 { color: #00ffcc; }
-    #chat-box {
-      width: 90%;
-      max-width: 500px;
-      height: 400px;
-      overflow-y: auto;
-      background: #1a1a1a;
-      border-radius: 10px;
+    .chat-container {
+      width: 100%;
+      max-width: 600px;
+      background: #1e293b;
+      height: 80vh;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       padding: 10px;
-      margin-bottom: 10px;
+      overflow-y: auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
     }
-    .user { color: #00ffcc; margin: 5px 0; }
-    .bot { color: #ffffff; margin: 5px 0; }
+    .message {
+      margin: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+    .user {
+      align-self: flex-end;
+      background: #2563eb;
+    }
+    .bot {
+      align-self: flex-start;
+      background: #334155;
+    }
+    .input-container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      background: #1e293b;
+      padding: 10px;
+      border-radius: 12px;
+    }
     input {
-      width: 80%;
+      flex: 1;
       padding: 10px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       outline: none;
+      font-size: 1em;
+      background: #334155;
+      color: white;
     }
     button {
-      padding: 10px;
-      background: #00ffcc;
+      background: #2563eb;
+      color: white;
       border: none;
-      border-radius: 5px;
-      color: black;
+      padding: 10px 16px;
+      margin-left: 10px;
+      border-radius: 8px;
       cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .typing {
+      font-style: italic;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <h1>💬 Martha Chatbot (Gemini)</h1>
-  <div id="chat-box"></div>
-  <div>
-    <input id="user-input" placeholder="Type your message..." />
+  <h2>🤖 Martha — Chatbot</h2>
+  <div class="chat-container" id="chatContainer"></div>
+  <div class="input-container">
+    <input type="text" id="userInput" placeholder="Say something to Martha..." />
     <button onclick="sendMessage()">Send</button>
   </div>
 
   <script>
+    const chatContainer = document.getElementById("chatContainer");
+    const userInput = document.getElementById("userInput");
+
+    // Load chat history
+    window.onload = () => {
+      const history = JSON.parse(localStorage.getItem("marthaChat") || "[]");
+      history.forEach(msg => addMessage(msg.text, msg.sender));
+    };
+
     async function sendMessage() {
-      const input = document.getElementById("user-input");
-      const chatBox = document.getElementById("chat-box");
-      const message = input.value.trim();
-      if (!message) return;
+      const text = userInput.value.trim();
+      if (!text) return;
 
-      chatBox.innerHTML += `<div class="user"><b>You:</b> ${message}</div>`;
-      input.value = "";
+      addMessage(text, "user");
+      saveMessage(text, "user");
+      userInput.value = "";
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
+      const typingMsg = addMessage("Martha is typing...", "bot", true);
 
-      const data = await res.json();
-      chatBox.innerHTML += `<div class="bot"><b>Martha:</b> ${data.reply}</div>`;
-      chatBox.scrollTop = chatBox.scrollHeight;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+        const data = await res.json();
+        chatContainer.removeChild(typingMsg);
+
+        const reply = data.reply || "No response 😔";
+        addMessage(reply, "bot");
+        saveMessage(reply, "bot");
+      } catch {
+        chatContainer.removeChild(typingMsg);
+        addMessage("⚠️ Error connecting to server.", "bot");
+      }
     }
+
+    function addMessage(text, sender, isTemp = false) {
+      const msg = document.createElement("div");
+      msg.className = `message ${sender}`;
+      if (isTemp) msg.classList.add("typing");
+      msg.textContent = text;
+      chatContainer.appendChild(msg);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return msg;
+    }
+
+    function saveMessage(text, sender) {
+      const history = JSON.parse(localStorage.getItem("marthaChat") || "[]");
+      history.push({ text, sender });
+      localStorage.setItem("marthaChat", JSON.stringify(history));
+    }
+
+    // Send message with Enter key
+    userInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
   </script>
 </body>
 </html>
