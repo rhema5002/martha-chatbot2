@@ -1,6 +1,6 @@
-const chatBox = document.getElementById("chat-box");
-const form = document.getElementById("chat-form");
-const input = document.getElementById("user-input");
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
 function scrollToBottom() {
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -44,8 +44,7 @@ function showTyping() {
   return div;
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
@@ -55,22 +54,17 @@ form.addEventListener("submit", async (e) => {
   const typing = showTyping();
 
   try {
-    const res = await fetch("/api/chat", {
+    const res = await fetch("/chat", {  // ✅ fixed endpoint
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [
-          { role: "system", content: "You are Martha, a helpful assistant." },
-          { role: "user", content: text }
-        ]
-      }),
+      body: JSON.stringify({ message: text })  // ✅ matches server.js
     });
 
     const data = await res.json();
     typing.remove();
 
-    if (data.assistant?.content) {
-      createMessage(data.assistant.content, "assistant");
+    if (data.reply) {  // ✅ matches server.js
+      createMessage(data.reply, "assistant");
     } else {
       createMessage("Sorry — something went wrong.", "assistant");
     }
@@ -79,7 +73,10 @@ form.addEventListener("submit", async (e) => {
     createMessage("Error connecting to server.", "assistant");
     console.error(err);
   }
+}
+
+// Event listeners
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keypress", function(e) {
+  if (e.key === "Enter") sendMessage();
 });
-
-
-
