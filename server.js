@@ -1,23 +1,19 @@
 import express from "express";
-import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
+import cors from "cors";
 
 dotenv.config();
+
 const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Setup static frontend
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use(express.static(path.join(__dirname, "public")));
-
+const PORT = process.env.PORT || 5000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// ====== API ROUTE ======
+app.use(cors());
+app.use(express.json());
+app.use(express.static("public")); // serves your index.html
+
+// ✅ Gemini chat route
 app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) return res.status(400).json({ error: "Message is required" });
@@ -39,9 +35,15 @@ app.post("/api/chat", async (req, res) => {
     );
 
     const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
 
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini 😔";
+    let reply = "No response from Gemini 😔";
+    if (data && data.candidates && data.candidates.length > 0) {
+      const parts = data.candidates[0].content.parts;
+      if (parts && parts.length > 0 && parts[0].text) {
+        reply = parts[0].text;
+      }
+    }
+
     res.json({ reply });
   } catch (error) {
     console.error("Server error:", error);
@@ -49,10 +51,9 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// ====== HOME ROUTE ======
+// ✅ Default route (fixes “Cannot GET /”)
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile("index.html", { root: "public" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Martha Gemini Chatbot running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
