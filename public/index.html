@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,19 +26,5 @@
   </div>
 
   <script src="script.js"></script>
-  <script>
-    // Attach event listeners
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
-
-    document.getElementById("userInput").addEventListener("keypress", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault(); // stop form from reloading the page
-        sendMessage();
-      }
-    });
-  </script>
 </body>
 </html>
-
-<!-- Move index.html to public folder -->
-
