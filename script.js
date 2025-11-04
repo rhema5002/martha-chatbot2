@@ -12,7 +12,7 @@ function createMessage(content, role) {
 
   const avatar = document.createElement("img");
   avatar.className = "avatar";
-  avatar.src = role === "user" ? "./client/user.png" : "/client/martha.png";
+  avatar.src = role === "user" ? "user.png" : "martha.png";
   avatar.alt = role;
 
   const bubble = document.createElement("div");
@@ -80,6 +80,7 @@ form.addEventListener("submit", async (e) => {
     console.error(err);
   }
 });
+
 
 
 
