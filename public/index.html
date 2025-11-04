@@ -3,28 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Martha — Chatbot</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Martha Chatbot (Gemini)</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #101010;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 { color: #00ffcc; }
+    #chat-box {
+      width: 90%;
+      max-width: 500px;
+      height: 400px;
+      overflow-y: auto;
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .user { color: #00ffcc; margin: 5px 0; }
+    .bot { color: #ffffff; margin: 5px 0; }
+    input {
+      width: 80%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+    }
+    button {
+      padding: 10px;
+      background: #00ffcc;
+      border: none;
+      border-radius: 5px;
+      color: black;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <div class="chat-container">
-    <header class="chat-header">
-      <h1>Martha — Assistant</h1>
-    </header>
-
-    <main id="chatBox" class="chat-box">
-      <div class="message assistant">
-        <img src="martha.png" alt="Martha" class="avatar">
-        <div class="bubble">Hi — I'm <strong>Martha!</strong> Ask me anything.</div>
-      </div>
-    </main>
-
-    <div class="chat-input">
-      <input type="text" id="userInput" placeholder="Say something to Martha..." autocomplete="off" />
-      <button id="sendBtn">Send</button>
-    </div>
+  <h1>💬 Martha Chatbot (Gemini)</h1>
+  <div id="chat-box"></div>
+  <div>
+    <input id="user-input" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const chatBox = document.getElementById("chat-box");
+      const message = input.value.trim();
+      if (!message) return;
+
+      chatBox.innerHTML += `<div class="user"><b>You:</b> ${message}</div>`;
+      input.value = "";
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await res.json();
+      chatBox.innerHTML += `<div class="bot"><b>Martha:</b> ${data.reply}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
 </body>
 </html>
