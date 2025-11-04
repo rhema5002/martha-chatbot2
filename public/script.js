@@ -54,16 +54,16 @@ async function sendMessage() {
   const typing = showTyping();
 
   try {
-    const res = await fetch("/chat", {  // ✅ fixed endpoint
+    const res = await fetch("/chat", {   // ✅ endpoint matches server.js
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })  // ✅ matches server.js
+      body: JSON.stringify({ message: text })  // ✅ matches server.js body
     });
 
     const data = await res.json();
     typing.remove();
 
-    if (data.reply) {  // ✅ matches server.js
+    if (data.reply) {   // ✅ matches server response
       createMessage(data.reply, "assistant");
     } else {
       createMessage("Sorry — something went wrong.", "assistant");
@@ -77,6 +77,10 @@ async function sendMessage() {
 
 // Event listeners
 sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keypress", function(e) {
-  if (e.key === "Enter") sendMessage();
+input.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendMessage();
+  }
 });
+
