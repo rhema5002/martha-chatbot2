@@ -25,7 +25,21 @@
     </form>
   </div>
 
+<script src="script.js"></script>
+<script>
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+  document.getElementById("userInput").addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  });
+</script>
+
+
+  
   <script src="script.js"></script>
 </body>
 </html>
+
 
