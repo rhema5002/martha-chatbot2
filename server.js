@@ -1,61 +1,47 @@
 import express from "express";
 import fetch from "node-fetch";
-import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+dotenv.config();
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-// Load the Gemini API key from Render Environment Variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Setup for serving index.html
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(__dirname));
 
-// ✅ Root route
+// ✅ Route to serve the HTML file
 app.get("/", (req, res) => {
-  res.send("✅ Martha is live and connected to Gemini AI!");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ Chat endpoint
+// ✅ Gemini API chat route
 app.post("/api/chat", async (req, res) => {
-  const userMessage = req.body.message;
-  if (!userMessage)
-    return res.status(400).json({ error: "Message is required" });
-
+  const { message } = req.body;
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: userMessage }],
-            },
-          ],
+          contents: [{ parts: [{ text: message }] }],
         }),
       }
     );
-
     const data = await response.json();
-
-    // Log full Gemini response for debugging
-    console.log("Gemini Response:", JSON.stringify(data, null, 2));
-
-    let reply = "No response from Gemini 😔";
-    if (data?.candidates?.length > 0) {
-      const parts = data.candidates[0]?.content?.parts;
-      if (parts && parts.length > 0 && parts[0]?.text) {
-        reply = parts[0].text;
-      }
-    }
-
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No reply 😔";
     res.json({ reply });
   } catch (error) {
-    console.error("Server error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error:", error);
+    res.status(500).json({ reply: "Server error. Please try again." });
   }
 });
 
 // ✅ Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Martha is live on port ${PORT}`));
