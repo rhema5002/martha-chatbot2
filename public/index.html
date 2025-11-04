@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Martha Chatbot</title>
+  <title>Martha — Assistant</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,65 +13,57 @@
       flex-direction: column;
       height: 100vh;
       margin: 0;
-      padding: 0;
     }
     .chat-container {
       flex: 1;
-      overflow-y: auto;
       padding: 20px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
     .message {
-      max-width: 70%;
+      max-width: 75%;
       padding: 10px 14px;
+      margin: 8px 0;
       border-radius: 10px;
-      margin-bottom: 10px;
-      word-wrap: break-word;
+      line-height: 1.4;
+      white-space: pre-wrap;
     }
-    .user {
-      align-self: flex-end;
-      background: #2563eb;
-    }
-    .bot {
-      align-self: flex-start;
-      background: #1e293b;
-    }
+    .user { align-self: flex-end; background: #2563eb; }
+    .bot { align-self: flex-start; background: #1e293b; }
     .input-container {
       display: flex;
-      padding: 10px;
       background: #1e293b;
+      padding: 10px;
     }
     input {
       flex: 1;
       padding: 10px;
       border: none;
       outline: none;
+      border-radius: 6px;
       background: #334155;
       color: white;
-      border-radius: 6px;
     }
     button {
-      margin-left: 10px;
       background: #2563eb;
-      border: none;
       color: white;
+      border: none;
       padding: 10px 20px;
       border-radius: 6px;
+      margin-left: 10px;
       cursor: pointer;
     }
-    button:hover {
-      background: #1d4ed8;
-    }
+    button:hover { background: #1d4ed8; }
   </style>
 </head>
 <body>
   <div class="chat-container" id="chat-container">
-    <div class="message bot">👋 Hi, I'm Martha! Ask me anything.</div>
+    <div class="message bot">👋 Hi — I'm Martha! Ask me anything.</div>
   </div>
 
   <div class="input-container">
-    <input id="user-input" type="text" placeholder="Type a message..." />
+    <input id="user-input" type="text" placeholder="Type your message..." />
     <button id="send-btn">Send</button>
   </div>
 
@@ -84,14 +76,14 @@
       const message = userInput.value.trim();
       if (!message) return;
 
-      // Show user message
+      // Show user's message
       const userMsg = document.createElement("div");
       userMsg.className = "message user";
       userMsg.textContent = message;
       chatContainer.appendChild(userMsg);
       userInput.value = "";
 
-      // Show temporary "typing" text
+      // Bot "typing..."
       const botMsg = document.createElement("div");
       botMsg.className = "message bot";
       botMsg.textContent = "Martha is typing...";
@@ -106,9 +98,10 @@
         });
 
         const data = await res.json();
-        botMsg.textContent = data.reply || "⚠️ No reply from Martha";
+        botMsg.textContent = data.reply || "⚠️ No reply from Martha.";
       } catch (err) {
         botMsg.textContent = "❌ Error connecting to server.";
+        console.error("Error:", err);
       }
 
       chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -121,3 +114,4 @@
   </script>
 </body>
 </html>
+
